@@ -1,0 +1,36 @@
+name: Replicate Container Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: 'Image name or URL'
+        required: true
+        type: string
+
+jobs:
+  replicate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python with uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install uv
+        run: uv --version
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Replicate container image
+        env:
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          REGISTRY_BASE_URL: ${{ secrets.REGISTRY_BASE_URL }}
+        run: |
+          uv run replicate-container-image.py "${{ inputs.image }}"
+
