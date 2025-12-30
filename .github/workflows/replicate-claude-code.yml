@@ -8,7 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/astral-sh/uv:python3.13-trixie
-      options: --network host
 
     steps:
       - name: Checkout code
