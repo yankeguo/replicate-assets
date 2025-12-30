@@ -25,43 +25,62 @@ logger = logging.getLogger(__name__)
 
 def parse_image(image: str) -> tuple[str, str, str]:
     """
-    Parse Docker image reference into (org, name, tag).
-    Handles formats like:
-    - docker.io/library/name:tag
-    - docker.io/org/name:tag
-    - org/name:tag
-    - name:tag
-    - name (defaults to latest tag)
-    """
-    # Remove docker.io or docker.io/library prefix
-    image = image.replace("docker.io/library/", "").replace("docker.io/", "")
+    Parse Docker image reference into (registry, path, tag).
 
-    # Split tag
+    Examples:
+    - docker.io/library/nginx:latest -> ("docker.io", "library/nginx", "latest")
+    - ghcr.io/org/name:tag -> ("ghcr.io", "org/name", "tag")
+    - nginx:latest -> ("docker.io", "nginx", "latest")
+    - org/name -> ("docker.io", "org/name", "latest")
+    """
+    # Split tag first
     if ":" in image:
         image_part, tag = image.rsplit(":", 1)
     else:
         image_part = image
         tag = "latest"
 
-    # Split org and name
+    # Split into parts
     parts = image_part.split("/")
-    if len(parts) == 1:
-        # No org, default to library
-        org = "library"
-        name = parts[0]
-    elif len(parts) == 2:
-        org, name = parts
+
+    # Detect registry (contains a dot or is localhost)
+    if len(parts) >= 2 and ("." in parts[0] or parts[0] == "localhost"):
+        registry = parts[0]
+        path = "/".join(parts[1:])
     else:
-        # Multiple slashes, treat first as org, rest as name
-        org = parts[0]
-        name = "/".join(parts[1:])
+        # No explicit registry, default to docker.io
+        registry = "docker.io"
+        path = image_part
 
-    return org, name, tag
+    return registry, path, tag
 
 
-def build_target_image(org: str, name: str, tag: str) -> str:
-    """Build target image name: REGISTRY_BASE_URL/[ORG]-[NAME]:[TAG]"""
-    return f"{REGISTRY_BASE_URL}/{org}-{name}:{tag}"
+def build_target_image(registry: str, path: str, tag: str) -> str:
+    """
+    Build target image name: REGISTRY_BASE_URL/[PREFIX]:[TAG]
+
+    - docker.io: Remove "library/" prefix if present, no registry prefix
+      Examples:
+        docker.io + library/nginx -> nginx
+        docker.io + org/name -> org-name
+        docker.io + nginx -> nginx
+
+    - Other registries: Add registry prefix, replace all slashes with hyphens
+      Examples:
+        ghcr.io + org/name -> ghcr.io-org-name
+    """
+    # Handle docker.io: no registry prefix
+    if registry == "docker.io":
+        # Remove "library/" prefix if present
+        if path.startswith("library/"):
+            path = path[8:]  # len("library/") = 8
+        # Replace remaining slashes with hyphens
+        final_name = path.replace("/", "-")
+    else:
+        # Other registries: add registry prefix and replace all slashes
+        final_name = f"{registry}-{path}".replace("/", "-")
+
+    return f"{REGISTRY_BASE_URL}/{final_name}:{tag}"
 
 
 def docker_login(username: str, password: str, registry: str) -> None:
@@ -136,8 +155,8 @@ def replicate_image(source_image: str) -> None:
     logger.info(f"Processing image: {source_image}")
 
     # Parse source image
-    org, name, tag = parse_image(source_image)
-    target_image = build_target_image(org, name, tag)
+    registry, path, tag = parse_image(source_image)
+    target_image = build_target_image(registry, path, tag)
 
     logger.info(f"Source: {source_image}")
     logger.info(f"Target: {target_image}")
