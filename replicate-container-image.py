@@ -122,7 +122,7 @@ def docker_tag(source: str, target: str) -> None:
 def docker_push(image: str) -> None:
     """Push Docker image."""
     logger.info(f"Pushing {image}...")
-    cmd = ["docker", "push", image]
+    cmd = ["docker", "push", "--platform", "linux/amd64", image]
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         raise RuntimeError(f"docker push failed: {result.stderr}")
