@@ -1,4 +1,4 @@
-name: Replicate Container Images
+name: Replicate Container Image
 
 on:
   workflow_dispatch:
@@ -15,16 +15,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python with uv
+      - name: Set up uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Install uv
+      - name: Verify uv installation
         run: uv --version
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Replicate container image
+      - name: Run replication script
         env:
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
