@@ -19,7 +19,6 @@ from qcloud_cos import CosConfig, CosS3Client
 load_dotenv()
 
 COS_BUCKET = os.getenv("COS_BUCKET")
-COS_REGION = os.getenv("COS_REGION", "ap-guangzhou")
 COS_PUBLIC_URL = os.getenv("COS_PUBLIC_URL", "").rstrip("/")
 COS_SECRET_ID = os.getenv("COS_SECRET_ID")
 COS_SECRET_KEY = os.getenv("COS_SECRET_KEY")
@@ -30,7 +29,10 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
 
 config = CosConfig(
-    Region=COS_REGION, SecretId=COS_SECRET_ID, SecretKey=COS_SECRET_KEY, Scheme="https"
+    Endpoint="cos.accelerate.myqcloud.com",
+    SecretId=COS_SECRET_ID,
+    SecretKey=COS_SECRET_KEY,
+    Scheme="https",
 )
 client = CosS3Client(config)
 
