@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       image:
-        description: 'Image name or URL'
+        description: "Image name or URL"
         required: true
         type: string
 
@@ -17,8 +17,6 @@ jobs:
 
       - name: Set up Python with uv
         uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
 
       - name: Install uv
         run: uv --version
@@ -33,4 +31,3 @@ jobs:
           REGISTRY_BASE_URL: ${{ secrets.REGISTRY_BASE_URL }}
         run: |
           uv run replicate-container-image.py "${{ inputs.image }}"
-
