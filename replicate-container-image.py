@@ -30,7 +30,7 @@ def parse_image(image: str) -> tuple[str, str, str]:
     Examples:
     - docker.io/library/nginx:latest -> ("docker.io", "library/nginx", "latest")
     - ghcr.io/org/name:tag -> ("ghcr.io", "org/name", "tag")
-    - nginx:latest -> ("docker.io", "nginx", "latest")
+    - nginx:latest -> ("docker.io", "library/nginx", "latest")
     - org/name -> ("docker.io", "org/name", "latest")
     """
     # Split tag first
@@ -52,33 +52,26 @@ def parse_image(image: str) -> tuple[str, str, str]:
         registry = "docker.io"
         path = image_part
 
+    # For docker.io, auto-add "library/" for single-name images
+    if registry == "docker.io" and "/" not in path:
+        path = f"library/{path}"
+
     return registry, path, tag
 
 
 def build_target_image(registry: str, path: str, tag: str) -> str:
     """
-    Build target image name: REGISTRY_BASE_URL/[PREFIX]:[TAG]
+    Build target image name: REGISTRY_BASE_URL/[REGISTRY]-[PATH]:[TAG]
 
-    - docker.io: Remove "library/" prefix if present, no registry prefix
-      Examples:
-        docker.io + library/nginx -> nginx
-        docker.io + org/name -> org-name
-        docker.io + nginx -> nginx
+    All images get registry prefix, slashes replaced with hyphens.
 
-    - Other registries: Add registry prefix, replace all slashes with hyphens
-      Examples:
-        ghcr.io + org/name -> ghcr.io-org-name
+    Examples:
+      - docker.io + library/nginx -> docker.io-library-nginx
+      - docker.io + org/name -> docker.io-org-name
+      - ghcr.io + org/name -> ghcr.io-org-name
     """
-    # Handle docker.io: no registry prefix
-    if registry == "docker.io":
-        # Remove "library/" prefix if present
-        if path.startswith("library/"):
-            path = path[8:]  # len("library/") = 8
-        # Replace remaining slashes with hyphens
-        final_name = path.replace("/", "-")
-    else:
-        # Other registries: add registry prefix and replace all slashes
-        final_name = f"{registry}-{path}".replace("/", "-")
+    # Build final name: registry-path with all slashes replaced
+    final_name = f"{registry}-{path}".replace("/", "-")
 
     return f"{REGISTRY_BASE_URL}/{final_name}:{tag}"
 
