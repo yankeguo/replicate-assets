@@ -119,10 +119,10 @@ def main():
     simple_upload_content(modified_install_ps1_text, "install.ps1")
     logger.info("uploaded install.ps1")
 
-    # Download stable version file
-    version_text, raw_version = simple_get(f"{src_base_url}/stable")
+    # Download latest version file
+    version_text, raw_version = simple_get(f"{src_base_url}/latest")
     version = version_text.strip()  # Remove any newlines/whitespace
-    simple_upload_content(raw_version, "stable")
+    simple_upload_content(raw_version, "latest")
     logger.info(f"version: {version}")
 
     # Download manifest.json
